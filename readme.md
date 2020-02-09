@@ -17,3 +17,7 @@ It has client-server architecture. Server maintains pool of on-the-fly compilers
 ## Notes
 
 In principle and with modifications we can even evaluate Java expressions, becaue each subsequent compilation in compiler is very fast (down to 10ms!), and allows class redefinition (this surprised me), but it can be in theory leaky or have other problems, so in current implementation I avoid it.
+
+## Links
+
+  * http://javapracs.blogspot.de/2011/06/dynamic-in-memory-compilation-using.html

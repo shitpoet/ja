@@ -1,0 +1,23 @@
+#!/bin/bash
+echo '-----------------------'
+#clear
+#[ -e App.class ] && rm App.class > /dev/null
+#javac App.java
+#janinoc App.java
+#echo "1" > /dev/stdin
+#ln -s
+#echo "package dev; public class stdin {}" | javac /dev/stdin
+#java -jar /usr/share/java/ecj.jar HelloWorld.java
+#java -jar /usr/share/maven-repo/org/eclipse/jdt/core/compiler/ecj/3.16.0/ecj-3.16.0.jar HelloWorld.java
+#ecj -1.9 App.java
+#java -cp bsh-2.0b6.jar bsh.Interpreter App.java
+#java -cp bsh-3.0.0-SNAPSHOT.jar bsh.Interpreter App.java
+#echo '---'
+#[ -e App.class ] && cat rat.java | java App
+#cat "rat.java" | java App.java 5054
+#java App.java
+cat "rat.java" | ja
+#ja
+#node jaman.js
+inotifywait -qq -e modify $0 *
+. $0

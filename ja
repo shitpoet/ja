@@ -1,0 +1,42 @@
+#!/bin/bash
+#echo "ja"
+
+tmpfile=$(mktemp -p /dev/shm XXXXXXXXXXXXX.java)
+trap "rm -f '$tmpfile'" exit int term
+
+#cat > $tmpfile
+
+if lsof -Pi :5404 -sTCP:LISTEN -t >/dev/null ; then
+    #echo "jaman is running"
+    # server is up, send code through http request
+    cat > $tmpfile
+    #curl -X POST -H "Content-Type: text/plain" -d @$tmpfile --connect-timeout 20  http://localhost:5404
+    curl -X POST -H "Content-Type: text/plain" -s \
+      --data-binary @$tmpfile --connect-timeout 20  http://localhost:5404
+else
+    #echo "jaman is not running, starting jaman..."
+    # jaman is not running, send code through stdin
+    #nohup node jaman.js > /dev/stdout 2>&1 &
+    #nohup node jaman.js |tee &
+    node jaman.js &
+    disown -h
+    #node jaman.js & disown
+    cat > $tmpfile
+    curl -X POST -H "Content-Type: text/plain" -s \
+      --data-binary @$tmpfile --connect-timeout 20 \
+      --retry 5 \
+      --retry-delay 1 \
+      --retry-connrefused 10 \
+      http://localhost:5404
+fi
+#echo GET / HTTP/1.0 | nc 0 5404
+#code=`cat`
+#code=`cat rat.ja`
+#printf "GET / HTTP/1.0\r\nHost: localhost\r\n\r\ntest" | nc localhost 5404
+#printf "POST / HTTP/1.0\r\n\r\n" | nc localhost 5404
+#curl -X POST -H "Content-Type: application/json" -d @req.json http://localhost:5404
+#cscstmp=/home/ors/.cache/cscs-cache
+#TEMP=$cscstmp cscs -ac -inmem:1 $tmpfile
+
+
+

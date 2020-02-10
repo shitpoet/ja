@@ -6,7 +6,8 @@ trap "rm -f '$tmpfile'" exit int term
 
 #cat > $tmpfile
 
-if lsof -Pi :5404 -sTCP:LISTEN -t >/dev/null ; then
+#if lsof -Pi :5404 -sTCP:LISTEN -t >/dev/null ; then
+if ss -ntl | grep ":5404" >/dev/null ; then
     #echo "jaman is running"
     # server is up, send code through http request
     cat > $tmpfile
@@ -18,16 +19,22 @@ else
     # jaman is not running, send code through stdin
     #nohup node jaman.js > /dev/stdout 2>&1 &
     #nohup node jaman.js |tee &
-    node jaman.js &
+    node jaman.js 1>&- 2>&- &
+    #node jaman.js &
     disown -h
     #node jaman.js & disown
     cat > $tmpfile
+    #curl -X POST -H "Content-Type: text/plain" -s \
     curl -X POST -H "Content-Type: text/plain" -s \
       --data-binary @$tmpfile --connect-timeout 20 \
       --retry 5 \
       --retry-delay 1 \
       --retry-connrefused 10 \
       http://localhost:5404
+    # detach stdio-pipes
+    exec 0<&-
+    exec 1>&-
+    exec 2>&-
 fi
 #echo GET / HTTP/1.0 | nc 0 5404
 #code=`cat`

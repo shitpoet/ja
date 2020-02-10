@@ -1,6 +1,7 @@
 const port = 5404
-const maxCodeLen = 1e4
+const maxCodeLen = 32768
 const poolSize = 10
+//const idleWarmUp = 15*60*1000 // every 15 mins
 
 const http = require('http')
 const fs = require('fs')
@@ -15,7 +16,8 @@ let nextChildId = 0
 
 function createChild(id, warmup) {
   //log(`creating child process ${id}`)
-  const cmd = 'java ja.java' + (warmup ? ' warmup' : '')
+  const javaOpts = '-Xmx256m'
+  const cmd = `java ${javaOpts} ja.java ${warmup ? ' warmup' : ''}`
   let child = {
     state: 'starting',
     output: ''
@@ -31,7 +33,7 @@ function createChild(id, warmup) {
   });
   let stdoutCharsRead = 0
   p.stdout.on('data', (data) => {
-    //process.stdout.write(`${data}`);
+    //process.stdout.write(`stdout: ${data}`);
     let s = '' + data
 
     if (child.state != 'ready') {
@@ -62,8 +64,11 @@ function createChild(id, warmup) {
   p.on('exit', (code) => {
     //log(`child process exited with code ${code}`);
     child.state = 'finished'
-    if (child.doneCallback)
+    if (child.doneCallback) {
       child.doneCallback(child.output)
+    } else {
+      log('no done callback register for child!')
+    }
   });
   return child
 }
@@ -142,12 +147,17 @@ const requestHandler = (request, response) => {
     request.on('data', function (data) {
       body += data;
       // too much POST data, kill the connection!
-      if (body.length > maxCodeLen) request.connection.destroy();
+      if (body.length > maxCodeLen) {
+        //log('too much data ' + body.length)
+        response.end('too much data - ' + Math.round(body.length / 1024)+'k');
+        request.connection.destroy();
+      }
     });
 
     request.on('end', function () {
       //console.log('recv code to execute: ' + body)
       runCode(body, (output) => {
+        //log('send output to client')
         response.end(output);
       })
     });

@@ -1,0 +1,4 @@
+#!/bin/bash
+sudo gkill jaman
+sudo gkill java
+sudo service fcgiwrap restart

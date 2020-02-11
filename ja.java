@@ -1,31 +1,31 @@
+import javax.tools.*;
+/*import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.HashMap;
+import java.util.List;
 import java.util.ArrayList;
 import java.util.List;
-import javax.tools.*;
-import java.io.ByteArrayOutputStream;
+import java.util.Locale;
+import java.util.Map;
+import java.util.Scanner;*/
+//import java.util.Timer;
+import java.util.*;
+import java.util.regex.*;
+/*import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
+import java.io.OutputStream;*/
 import java.io.*;
+//import java.io.IOException;
 import java.nio.charset.*;
 import java.nio.file.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URI;
 import java.security.SecureClassLoader;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.regex.*;
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaFileObject;
 import javax.tools.SimpleJavaFileObject;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Locale;
-import java.util.*;
-
 
 public class ja {
 
@@ -116,6 +116,12 @@ public class ja {
         //uCompiler.runToString(cls1source.fullClassName);
         uCompiler.runMain(cls1source.fullClassName, new String[] { "arg1", "arg2", "arg3" });
       } catch (Exception e) {
+        if (e instanceof InvocationTargetException) {
+          var ee = e.getCause();
+          if (ee != null) e = (Exception)ee;
+        }
+        //System.out.println(e);
+        //System.out.println();
         e.printStackTrace();
       }
       /*try {
@@ -142,19 +148,52 @@ public class ja {
   public static void main(String[] args) {
     long t, t2;
 
+    final String warmUpCode = loadFile("warmup.java");
+
     //System.out.println(Arrays.toString(args));
     if (args.length > 0 && args[0].equals("warmup")) {
       //System.out.println("warm up");
       //t = System.currentTimeMillis();
-      eval(loadFile("warmup.java"));
+      eval(warmUpCode);
       //t2 = System.currentTimeMillis();
     } else {
       //System.out.println("no warm up");
     }
 
+    System.gc();
+    System.gc();
     System.out.print("READY");
     System.out.flush();
     //System.out.println((t2 - t) + " ms");
+
+    final int warmUpInterval = (new Random().nextInt(10) + 5) * 60 * 1000;
+    //final int warmUpInterval = 15 * 1000;
+    Timer timer = new Timer();
+    timer.scheduleAtFixedRate(new TimerTask() {
+      @Override
+      public void run() {
+        //System.out.println("additional warm up");
+        long t = System.currentTimeMillis();
+        eval(warmUpCode);
+        long t2 = System.currentTimeMillis();
+        //System.out.println((t2 - t) + " ms");
+      }
+    }, warmUpInterval, warmUpInterval);
+
+    /*try {
+      t = System.currentTimeMillis();
+      while (System.in.available() == 0) {
+        Thread.sleep(10);
+        if (System.in.available() > 0) break;
+        t2 = System.currentTimeMillis();
+        if (t2 - t > 1000) {
+          eval(warmUpCode);
+          t = System.currentTimeMillis();;
+        }
+      }
+    } catch (Exception e) {
+      System.out.println(e);
+    }*/
 
     final String code;
     try {
@@ -167,11 +206,18 @@ public class ja {
       // StandardCharsets.UTF_8.name() > JDK 7
       code = result.toString("UTF-8");
       //t = System.currentTimeMillis();
+      //System.out.println(code);
       eval(code);
       //t2 = System.currentTimeMillis();
       //System.out.println((t2 - t) + " ms");
     } catch (Exception e) {
+      if (e instanceof InvocationTargetException) {
+        var ee = e.getCause();
+        if (ee != null) e = (Exception)ee;
+      }
       System.out.println(e);
+      System.out.println();
+      e.printStackTrace();
       System.exit(1);
       return;
     }

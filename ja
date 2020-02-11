@@ -12,29 +12,49 @@ if ss -ntl | grep ":5404" >/dev/null ; then
     # server is up, send code through http request
     cat > $tmpfile
     #curl -X POST -H "Content-Type: text/plain" -d @$tmpfile --connect-timeout 20  http://localhost:5404
-    curl -X POST -H "Content-Type: text/plain" -s \
-      --data-binary @$tmpfile --connect-timeout 20  http://localhost:5404
+
+    status=$(curl -X GET -H "Content-Type: text/plain" --connect-timeout 20 -s http://localhost:5404)
+    if [ "$status" == "ready" ]; then
+      #echo 'ready'
+      curl -X POST -H "Content-Type: text/plain"  \
+        --data-binary @$tmpfile \
+        -s --connect-timeout 20 \
+        http://localhost:5404
+    else
+      #echo 'not ready yet'
+      java $tmpfile
+    fi
+
 else
     #echo "jaman is not running, starting jaman..."
     # jaman is not running, send code through stdin
-    #nohup node jaman.js > /dev/stdout 2>&1 &
-    #nohup node jaman.js |tee &
-    node jaman.js 1>&- 2>&- &
+    cat > $tmpfile
+    java $tmpfile
+
+    #exec 0<&-
+    #exec 1>&-
+    #exec 2>&-
+
+    #if [[ $- == *i* ]]; then
+    if [ -t 1 ]; then
+      #echo 'interactive mode'
+      node jaman.js debug &
+    else
+      #echo 'non-interactive mode'
+      node jaman.js 1>&- 2>&- & # needed for fcgiwrap to not freeze
+    fi
     #node jaman.js &
     disown -h
-    #node jaman.js & disown
-    cat > $tmpfile
     #curl -X POST -H "Content-Type: text/plain" -s \
-    curl -X POST -H "Content-Type: text/plain" -s \
-      --data-binary @$tmpfile --connect-timeout 20 \
-      --retry 5 \
-      --retry-delay 1 \
-      --retry-connrefused 10 \
-      http://localhost:5404
+      #--data-binary @$tmpfile --connect-timeout 20 \
+      #--retry 5 \
+      #--retry-delay 1 \
+      #--retry-connrefused 10 \
+      #http://localhost:5404
     # detach stdio-pipes
-    exec 0<&-
-    exec 1>&-
-    exec 2>&-
+    #exec 0<&-
+    #exec 1>&-
+    #exec 2>&-
 fi
 #echo GET / HTTP/1.0 | nc 0 5404
 #code=`cat`
